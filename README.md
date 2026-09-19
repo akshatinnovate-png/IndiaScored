@@ -1,6 +1,7 @@
 # IndiaScored — AI Credit Risk Platform (Alternative Data + Explainable AI)
 
  Submitted to HackDevengers 2.0 by Akshat Sarkar.
+ ## This is a huge code base, to be honest, yes, AI has been used to a certain point to make the solution more viable, I am using a pretrained model to adhere to the time limits of this contest.
 
 IndiaScored scores the creditworthiness of people who have **no formal credit history** — India's ~190M unbanked and millions more underbanked — using **alternative data** instead of a CIBIL record, and explains every decision so a human underwriter can trust it.
 
