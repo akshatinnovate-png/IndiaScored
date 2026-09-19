@@ -1,0 +1,8 @@
+# Extra dependencies needed only to run notebooks/IndiaScored_Model_Development.ipynb.
+-r requirements.txt
+
+imbalanced-learn==0.13.0   # SMOTE oversampling
+optuna==4.1.0              # Bayesian hyper-parameter search
+matplotlib==3.10.0
+seaborn==0.13.2
+jupyter==1.1.1
