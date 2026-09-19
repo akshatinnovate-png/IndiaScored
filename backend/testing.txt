@@ -1,0 +1,13 @@
+{
+  "user_type": "smartphone",
+  "region": "urban",
+  "sms_count": 25,
+  "bill_on_time_ratio": 0.9,
+  "recharge_freq": 3,
+  "sim_tenure": 12,
+  "location_stability": 0.8,
+  "income_signal": 0.7,
+  "coop_score": 0.6,
+  "land_verified": 1,
+  "age_group": "25-35"
+}
