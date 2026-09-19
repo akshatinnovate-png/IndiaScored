@@ -54,13 +54,18 @@ SCORE_CEILING = 900
 #: lands just inside the band rather than pinned to its endpoint.
 _LOGIT_WINDOW = (-7.0, 7.0)
 
-#: Score thresholds used when collapsing a multi-loan history to one grade.
-_SCORE_LADDER: Sequence[tuple[float, str]] = (
-    (750.0, "A+"),
-    (700.0, "A"),
-    (650.0, "B"),
-    (600.0, "C"),
-)
+def _score_ladder() -> Sequence[tuple[float, str]]:
+    """Score thresholds for each grade, derived from the PD ladder itself.
+
+    A blended score and a single application's PD must not disagree about
+    what grade an applicant is, so the thresholds are computed from the same
+    bins rather than hardcoded alongside them.
+    """
+    return tuple(
+        (float(india_score_from_pd(upper)), label)
+        for _, upper, label in GRADE_LADDER
+        if label != "D"
+    )
 
 
 @dataclass(frozen=True)
@@ -164,7 +169,7 @@ def blend_portfolio(loans: Iterable[Mapping]) -> dict:
     ) / total_weight
 
     grade = "D"
-    for threshold, label in _SCORE_LADDER:
+    for threshold, label in _score_ladder():
         if score >= threshold:
             grade = label
             break

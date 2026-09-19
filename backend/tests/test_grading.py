@@ -106,6 +106,18 @@ class TestGradePd:
         }
 
 
+class TestLadderConsistency:
+    """A blended score and a single PD must not disagree about the grade."""
+
+    @pytest.mark.parametrize("pd_value", [0.005, 0.02, 0.045, 0.08, 0.15, 0.25, 0.3, 0.6, 0.9])
+    def test_blended_grade_matches_the_pd_grade_for_one_loan(self, pd_value):
+        score = india_score_from_pd(pd_value)
+        blended = blend_portfolio(
+            [{"india_score": score, "loan_amount_requested": 100_000, "repayment_confidence": 1 - pd_value}]
+        )
+        assert blended["grade"] == grade_from_pd(pd_value)
+
+
 class TestPortfolioBlend:
     def test_empty_history_is_not_an_error(self):
         assert blend_portfolio([])["loan_count"] == 0

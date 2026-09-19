@@ -274,49 +274,58 @@ class ApplicantRepository:
         return {bucket["_id"]: bucket["count"] for bucket in buckets}
 
     def review_queue(self, limit: int = 100) -> list[dict]:
-        """Applications joined to their profile, newest first."""
-        cursor = self._collection.aggregate(
-            [
-                {"$match": {"doc_type": APPLICATION}},
-                {"$sort": {"submitted_at": DESCENDING}},
-                {"$limit": limit},
+        """Applications joined to their applicants' names, newest first.
+
+        The join is done in two indexed reads rather than a ``$lookup``: the
+        profile side is one small query keyed on the ids already in hand, and
+        it keeps the query working on every MongoDB deployment.
+        """
+        applications = list(
+            self._collection.find(
+                {"doc_type": APPLICATION},
                 {
-                    "$lookup": {
-                        "from": self._collection.name,
-                        "let": {"uid": "$clerk_user_id"},
-                        "pipeline": [
-                            {
-                                "$match": {
-                                    "$expr": {
-                                        "$and": [
-                                            {"$eq": ["$doc_type", PROFILE]},
-                                            {"$eq": ["$clerk_user_id", "$$uid"]},
-                                        ]
-                                    }
-                                }
-                            },
-                            {"$project": {"_id": 0, "profile": 1}},
-                        ],
-                        "as": "profile_doc",
-                    }
+                    "_id": 0,
+                    "clerk_user_id": 1,
+                    "submitted_at": 1,
+                    "status": 1,
+                    "alternative_data.loan_amount_requested": 1,
+                    "alternative_data.loan_category": 1,
+                    "score_card.india_score": 1,
+                    "score_card.grade": 1,
+                    "score_card.decision": 1,
                 },
-                {
-                    "$project": {
-                        "_id": 0,
-                        "clerk_user_id": 1,
-                        "submitted_at": 1,
-                        "status": 1,
-                        "loan_amount_requested": "$alternative_data.loan_amount_requested",
-                        "loan_category": "$alternative_data.loan_category",
-                        "india_score": "$score_card.india_score",
-                        "grade": "$score_card.grade",
-                        "decision": "$score_card.decision",
-                        "name": {"$arrayElemAt": ["$profile_doc.profile.name", 0]},
-                    }
-                },
-            ]
+            )
+            .sort("submitted_at", DESCENDING)
+            .limit(limit)
         )
-        return list(cursor)
+        if not applications:
+            return []
+
+        user_ids = {app["clerk_user_id"] for app in applications}
+        names = {
+            doc["clerk_user_id"]: (doc.get("profile") or {}).get("name")
+            for doc in self._collection.find(
+                {"doc_type": PROFILE, "clerk_user_id": {"$in": list(user_ids)}},
+                {"_id": 0, "clerk_user_id": 1, "profile.name": 1},
+            )
+        }
+
+        return [
+            {
+                "clerk_user_id": app["clerk_user_id"],
+                "submitted_at": app["submitted_at"],
+                "status": app.get("status", "submitted"),
+                "name": names.get(app["clerk_user_id"]),
+                "loan_amount_requested": (app.get("alternative_data") or {}).get(
+                    "loan_amount_requested", 0
+                ),
+                "loan_category": (app.get("alternative_data") or {}).get("loan_category", ""),
+                "india_score": (app.get("score_card") or {}).get("india_score"),
+                "grade": (app.get("score_card") or {}).get("grade"),
+                "decision": (app.get("score_card") or {}).get("decision"),
+            }
+            for app in applications
+        ]
 
     def distinct_applicants(self) -> Iterable[str]:
         return self._collection.distinct("clerk_user_id", {"doc_type": APPLICATION})

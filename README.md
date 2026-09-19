@@ -1,108 +1,191 @@
-# IndiaScored — AI Credit Risk Platform (Alternative Data + Explainable AI)
+# IndiaScored — AI Credit Risk on Alternative Data
 
- Submitted to HackDevengers 2.0 by Akshat Sarkar.
- ## This is a huge code base, to be honest, yes, AI has been used to a certain point to make the solution more viable, I am using a pretrained model to adhere to the time limits of this contest.
+**Author: Akshat Sarkar**
 
-IndiaScored scores the creditworthiness of people who have **no formal credit history** — India's ~190M unbanked and millions more underbanked — using **alternative data** instead of a CIBIL record, and explains every decision so a human underwriter can trust it.
+IndiaScored scores the creditworthiness of people who have **no formal credit
+history** — India's ~190 million unbanked and millions more underbanked — using
+alternative data instead of a bureau record, and explains every decision in
+language a loan officer can defend.
 
 ---
 
 ## The problem
 
-A lender can't assess someone with no bank statements, no CIBIL score, no salary slips. So those people get pushed to informal lenders at predatory rates. But they *do* leave digital footprints — how regularly they recharge their phone, whether they pay utility bills on time, how long they've held a SIM, how stable their location is. IndiaScored turns those footprints into a defensible credit decision.
+A lender cannot assess someone with no bank statement, no bureau score and no
+salary slip, so those people are pushed to informal lenders at predatory rates.
+But they *do* leave digital footprints: how reliably they recharge a phone,
+whether utility bills are paid on time, how long they have held the same SIM,
+how settled their location is, how they stand in their cooperative or self-help
+group. IndiaScored turns those footprints into a defensible credit decision.
 
 ## What it does, end to end
 
-1. **A user onboards** — Aadhaar OCR + phone verification, then fills a profile (telecom, utility, demographic signals) and takes a short **psychometric test** (timed and randomised so it can't be gamed).
-2. **The backend runs the ML model** — a calibrated LightGBM classifier outputs a **Probability of Default (PD)**.
-3. **PD becomes a decision** — PD maps to a risk tier (A+ → D), an alternative CIBIL-style score (300–900), and a sanctioned loan amount scaled by tier.
-4. **The decision is explained** — SHAP identifies the top factors that drove the score; a local **Mistral LLM (via Ollama)** turns those raw SHAP values into a plain-English remark for the loan officer.
-5. **An admin reviews** — a dashboard shows the pipeline, risk distribution, per-applicant SHAP breakdown and the AI remark, and the admin approves, rejects or flags.
+1. **Onboarding** — Aadhaar OCR and phone verification, a short profile, and a
+   timed behavioural assessment that is randomised so it cannot be coached.
+2. **Scoring** — a calibrated LightGBM classifier returns a probability of
+   default (PD) for the applicant's alternative-data vector.
+3. **Decision** — PD maps to a risk grade (A+ → D), a 300-900 **IndiaScore**, an
+   indicative rate and a sanctionable amount capped by grade.
+4. **Explanation** — SHAP identifies the factors that moved the decision; those
+   factors are looked up in a credit-domain knowledge base and a local Mistral
+   model (via Ollama) writes the underwriter's remark. With no LLM installed, a
+   deterministic rule-based remark is produced instead — the explanation is
+   never simply missing.
+5. **Review** — an underwriter sees the pipeline, the grade mix, the per-file
+   SHAP breakdown and the remark, then approves, rejects or flags. The applicant
+   is notified automatically.
 
 ## Architecture
-┌───────────────────────────── Frontend (React 19 + TypeScript, Vite) ─────────────────────────────┐
-│ User portal (Clerk auth) · Psychometric test · Apply form · Admin dashboard · SHAP charts │
-└───────────────────────────────────────────┬───────────────────────────────────────────────────────┘
-│ REST (axios)
-┌───────────────────────────────────────────┴──────────── Backend (FastAPI) ───────────────────────┐
-│ Profile · Onboard · Predict · Psychometric · Admin summary · Generate-insight · Notifications │
-│ │
-│ ML pipeline: preprocessor → calibrated LightGBM → PD → tier/score/sanction → SHAP explainer │
-│ RAG layer: top SHAP features → feature knowledge base → Mistral (Ollama) → NL remark │
-└───────────────────────────────────────────┬───────────────────────────────────────────────────────┘
-│
-MongoDB (users, applications, psychometric, notifications)
 
+```
+┌──────────── Frontend — React 19 + TypeScript + Vite ────────────┐
+│  features/                                                       │
+│    landing · auth · onboarding · psychometric                    │
+│    applications · dashboard · underwriting · support             │
+│  lib/api.ts — the single typed client for every backend call     │
+└───────────────────────────┬──────────────────────────────────────┘
+                            │ REST (fetch, typed)
+┌───────────────────────────┴──────── Backend — FastAPI ───────────┐
+│  routers/       one per product area, behind an app factory      │
+│  schemas/       pydantic contracts, strict enums                 │
+│  scoring/       grading (pure policy) · features · bundle · engine│
+│  explain/       knowledge base (retrieval) · narrator (generation)│
+│  repositories/  the only code that touches MongoDB               │
+│  training/      data synthesis + training pipeline               │
+└───────────────────────────┬──────────────────────────────────────┘
+                            │
+                    MongoDB — one `applicants` collection
+```
 
-## Codebase walkthrough
+## Repository layout
 
-### Backend (`backend/`, FastAPI + Python)
-
-- **`app.py`** (~860 lines) — the API. Loads the model bundle once at startup, connects to MongoDB, and exposes the routes below. Also holds the RAG logic: `retrieve_explanations()` looks up each top SHAP feature in a knowledge base, and `ollama_generate()` shells out to a local Mistral model to write the underwriter's remark.
-- **`inference_utils.py`** — the scoring core, pure and testable. `pd_to_alt_cibil()` maps a probability to a 300–900 score via a logit transform; `pd_to_tier()` bins PD into A+…D; `sanction_amount()` scales the requested loan by tier; `infer_user()` ties it together — feature-engineers the row, predicts PD, computes tier/score/eligibility and returns the top-k SHAP features.
-- **`models.py`** — `InferenceModel`, a thin wrapper pairing the preprocessor with the calibrated classifier so `predict_proba` is one call.
-- **`artifacts/`** — the trained model, serialized: `lgbm_raw_model.pkl` (raw LightGBM), `calibrated_clf.pkl` (probability-calibrated), `preprocessor.pkl`, `feature_names.pkl`, `inference_wrapper.pkl`, and a bundled `bharatscore_pipeline_bundle.pkl` that also carries the SHAP explainer.
-- **`BharatScore_DataGeneration.ipynb`** — the notebook that generates the synthetic training data and trains the pipeline (SMOTE for class imbalance, Optuna for hyperparameter tuning).
-
-**API routes**
-
-| Route | Method | Purpose |
-|---|---|---|
-| `/onboard`, `/profile` | POST/GET | Create and read the applicant profile |
-| `/predict`, `/predict/{user_id}` | POST/GET | Run the model, return PD, tier, score, decision, SHAP |
-| `/save-psychometric`, `/psychometric-status` | POST/GET | Store and check the behavioural test |
-| `/admin/applications-summary` | GET | Aggregate pipeline stats for the dashboard |
-| `/admin/applications/{clerk_user_id}` | GET | Full per-applicant view with SHAP |
-| `/admin/generate-insight`, `/generate-remark` | POST | RAG: SHAP → Mistral → natural-language remark |
-| `/user/notifications*` | GET/POST | Applicant notifications (list, count, mark-read) |
-| `/health`, `/` | GET | Liveness + whether model and explainer loaded |
-
-### Frontend (`frontend/bharatscore-ui/`, React 19 + TypeScript + Vite)
-
-- **Auth** — Clerk. **Data fetching** — TanStack Query over axios. **UI** — Radix primitives + Tailwind, Framer Motion, Lucide icons. **Charts** — Recharts (SHAP waterfalls, risk distribution). **Face check** — face-api.js during verification.
-- **Key screens** — `LandingPage`, `SignInPage`/`SignUpPage`, `ProfileForm`, `psychometricTest`, `ApplyForm`, `Dashboard`/`CreditRiskDashboard` (applicant), and `AdminDashboard`/`Applications` (underwriter). `dashboard/BharatScore.tsx` renders the score gauge; `forms/` holds the loan and score-generation flows.
-
-## Data model (MongoDB)
-
-One `bharatscore` database: `users` (profile + latest score), applications, psychometric results and notifications. Admin summary stats are computed with MongoDB aggregation pipelines rather than in Python, so they stay fast as data grows.
+```
+backend/
+  indiascored/         the FastAPI application package
+  artifacts/           the serialized model bundle
+  tests/               83 tests — credit policy, features, engine, explain, API
+  requirements.txt     runtime dependencies
+  requirements-training.txt  extras for the notebook
+notebooks/
+  IndiaScored_Model_Development.ipynb   data generation → training → export
+frontend/indiascored-ui/
+  src/features/        one folder per part of the product
+  src/shared/          ui primitives and hooks
+  src/lib/             api client, types, formatting
+```
 
 ## Running it
 
-**Backend**
+### Backend
+
 ```bash
 cd backend
-python -m venv venv && venv\Scripts\activate      # macOS/Linux: source venv/bin/activate
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-# set MONGO_URI in a .env file; ensure artifacts/ is populated
-uvicorn app:app --reload --port 8000              # Swagger at http://localhost:8000/docs
-ollama pull mistral                               # optional, enables AI remarks
+cp .env.example .env          # set MONGO_URI
+uvicorn indiascored.main:app --reload --port 8000
 ```
 
-**Frontend**
+Swagger is at http://localhost:8000/docs. `GET /health` reports whether the
+model, the SHAP explainer and the local LLM each loaded.
+
+Optional, for LLM-written remarks rather than the rule-based fallback:
+
 ```bash
-cd frontend/bharatscore-ui
+ollama pull mistral
+```
+
+### Frontend
+
+```bash
+cd frontend/indiascored-ui
 npm install
-# set VITE_CLERK_PUBLISHABLE_KEY and VITE_API_BASE_URL in .env
+cp .env.example .env          # set VITE_CLERK_PUBLISHABLE_KEY and VITE_API_BASE_URL
 npm run dev
 ```
 
-## Model performance
+### Tests
 
-Trained on a synthetic ~5,000-profile dataset built to simulate thin-file applicants and edge-case behaviour. Split 70/10/20, SMOTE + class weights for the imbalance, Optuna (Bayesian) tuning.
+```bash
+cd backend && pytest                       # 83 tests
+cd frontend/indiascored-ui && npm run build   # typecheck + production build
+```
 
-- ROC-AUC **0.64**, PR-AUC **0.32**, Brier **0.19** (well-calibrated), F1 (defaults) **0.71**.
-- Top predictive features (SHAP): cooperative/community score, psychometric result, SMS activity and bill punctuality, SIM tenure and land verification.
+## API
 
-These are baseline numbers on deliberately hard synthetic data; they're expected to rise on real, higher-volume production data — the pipeline is built to retrain and scale.
+| Route | Method | Purpose |
+|---|---|---|
+| `/profile` | POST / GET | Create and read the applicant profile |
+| `/psychometric`, `/psychometric/status` | POST / GET | Store and check the behavioural assessment |
+| `/applications` | POST | Submit an application — scored in the same call |
+| `/applications/{user}` | GET | Full history plus the blended headline score |
+| `/score`, `/score/explained` | POST | Score a vector, with or without a written remark |
+| `/score/rescore` | POST | Re-run the current model over a stored application |
+| `/underwriting/queue` | GET | Pipeline stats, grade mix and the review queue |
+| `/underwriting/applicants/{user}` | GET | The full applicant dossier |
+| `/underwriting/remark` | POST | RAG: SHAP → knowledge base → Mistral → remark |
+| `/underwriting/applications/{user}/{ts}` | PATCH | Record a decision and notify the applicant |
+| `/notifications/{user}` | GET / PATCH | List, count and mark notifications read |
+| `/health`, `/` | GET | Readiness, component by component |
+
+## The model
+
+Trained on a 12,000-applicant synthetic population. No public dataset covers
+people with *no* bureau record — anyone in a lending dataset was already
+lendable — so the population is simulated from a structural model: plausible
+marginals per signal, hand-set log-odds weights encoding credit priors,
+non-linear interactions, noise, and an intercept solved numerically to hit a
+20% default rate.
+
+Pipeline: feature engineering shared with the serving code → impute/scale/one-hot
+→ SMOTE on the training fold only → Optuna (TPE) tuning against validation
+ROC-AUC → isotonic calibration on a held-out fold → SHAP TreeExplainer.
+
+Held-out test performance:
+
+| Metric | Raw booster | Calibrated |
+|---|---|---|
+| ROC-AUC | 0.769 | 0.765 |
+| PR-AUC (no-skill 0.20) | 0.506 | 0.499 |
+| Brier | 0.150 | **0.133** |
+
+Calibration is the number that matters most: the PD becomes a rupee amount, so
+it has to mean what it says. The validation fold is deliberately not reported —
+the calibrator was fitted on it, so any score there is in-sample.
+
+Top SHAP drivers: inferred income stability, utility bill punctuality,
+psychometric result, cooperative standing, land verification, recharge
+regularity.
+
+**These numbers describe the pipeline, not the Indian credit market.** The
+ground truth is generated, so what transfers to production is the machinery —
+the features, the calibration, the explanation layer — not the AUC.
 
 ## Scalability
 
-- **Decoupled services** — React frontend and FastAPI backend scale independently; the model layer can be scaled on its own behind the API.
-- **Async by default** — FastAPI handles concurrent inferences and DB calls without blocking.
-- **Calibrated, versioned model artifacts** — the model is a swappable `.pkl` bundle, so retraining is a redeploy of one file, not a code change.
-- **DB-side aggregation** — admin analytics run as MongoDB pipelines, so dashboards stay responsive as applications grow.
-- **Stateless API** — no server-side session state, so it scales horizontally behind a load balancer; ready to containerize (Docker) and run multiple replicas.
+- **Decoupled services.** The React frontend and the FastAPI backend scale
+  independently, and the model layer can be scaled behind the API on its own.
+- **Stateless API.** No server-side session state, so it scales horizontally
+  behind a load balancer.
+- **Swappable model artifact.** The bundle is one `.pkl` read from
+  `MODEL_BUNDLE_PATH`; retraining is a file drop, not a code change, and a
+  missing artifact degrades to a clear 503 instead of taking the API down.
+- **Database-side aggregation.** Pipeline stats and the grade mix are computed
+  by MongoDB, over indexed fields, so dashboards stay fast as the book grows.
+- **Scoring on submit.** Files arrive in the underwriting queue already scored,
+  so no work piles up waiting for someone to open them.
 
 ## Future work
 
-Sequential deep-learning models (LSTMs) for repayment time-series, generative psychometric question banks to fully defeat gaming, and Kafka-based real-time telecom streaming into the scoring engine.
+- Sequential models (LSTM / temporal transformers) over recharge and bill
+  histories, reading an applicant's trajectory rather than a snapshot.
+- Generative psychometric item banks, so no two applicants see the same
+  questions and the assessment cannot be coached.
+- Kafka-streamed telecom events, turning the score into a live risk signal.
+- Fairness auditing across region, gender and age bands before any real lending
+  decision rides on the model — a synthetic population cannot surface the
+  disparate impact a real one would.
+
+---
+
+*IndiaScored — Akshat Sarkar*
