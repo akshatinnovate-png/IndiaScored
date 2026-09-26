@@ -35,6 +35,30 @@ group. IndiaScored turns those footprints into a defensible credit decision.
    SHAP breakdown and the remark, then approves, rejects or flags. The applicant
    is notified automatically.
 
+## Demo
+
+Run the backend and frontend locally (see **Running it** below), then walk
+through the full applicant-to-underwriter loop:
+
+1. **Sign up** as an applicant and complete onboarding — Aadhaar OCR, phone
+   verification, a short profile, and the timed psychometric assessment.
+2. **Apply for a loan** through the 4-step application form. The application
+   is scored the instant it's submitted — no batch job, no waiting.
+3. **View your dashboard** to see the IndiaScore gauge (300-900), grade,
+   indicative rate and sanctionable amount for each application.
+4. **Sign in as an underwriter** (separate login) to see the review queue,
+   pipeline stats and grade mix across all applicants.
+5. **Open an applicant's file** to see the full credit risk report: the SHAP
+   driver breakdown and a plain-language underwriting remark explaining
+   *why* the model scored them the way it did.
+6. **Approve, reject or flag** the application — the applicant is notified
+   automatically and their dashboard updates.
+
+Try one strong applicant (stable income signal, on-time bill history, long
+SIM tenure) against one weak one (irregular income, late payments, short
+tenure) to see the score, grade and explanation move accordingly — a strong
+profile lands around IndiaScore ~730 (A+) and a weak one around ~470 (D).
+
 ## Architecture
 
 ```
