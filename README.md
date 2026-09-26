@@ -18,6 +18,45 @@ whether utility bills are paid on time, how long they have held the same SIM,
 how settled their location is, how they stand in their cooperative or self-help
 group. IndiaScored turns those footprints into a defensible credit decision.
 
+IndiaScored — super simple explanation
+
+Imagine Rahul wants a ₹20,000 loan, but he has:
+
+❌ No credit score
+❌ No previous loan
+❌ No salary slip
+❌ Little or no formal banking history
+
+So a bank thinks: “We don't have enough information to know whether Rahul will repay us.”
+
+IndiaScored tries to solve this.
+
+How?
+
+Instead of looking only at traditional credit history, it looks at other signals that may show financial reliability, such as:
+
+📱 Does he regularly recharge his phone?
+💡 Does he pay electricity/utility bills on time?
+📲 Has he kept the same SIM for a long time?
+🏠 Has he lived in the same area for a long time?
+🤝 Does he have a stable record in a cooperative or self-help group?
+
+The AI combines these signals and produces something like:
+
+IndiaScored: Low / Medium / High estimated credit risk
+
+But the important part is that it doesn't just say “yes” or “no.”
+
+It also explains why:
+
+“This applicant has consistently paid utility bills on time and has maintained the same mobile connection for 4 years. These factors contributed positively to the assessment.”
+
+So a loan officer can understand and defend the decision rather than blindly trusting a mysterious AI score.
+
+In one sentence:
+
+IndiaScored is like giving a person with no credit history a “financial reputation” based on reliable alternative signals, then explaining how the AI reached its decision.
+
 ## What it does, end to end
 
 1. **Onboarding** — Aadhaar OCR and phone verification, a short profile, and a
