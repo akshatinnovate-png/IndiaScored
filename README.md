@@ -167,6 +167,25 @@ cp .env.example .env          # set VITE_CLERK_PUBLISHABLE_KEY and VITE_API_BASE
 npm run dev
 ```
 
+### Deploying the frontend to GitHub Pages
+
+`.github/workflows/deploy-pages.yml` builds and deploys
+`frontend/indiascored-ui` to GitHub Pages on every push to `main`. One-time
+setup:
+
+1. Repo **Settings → Pages → Source** → set to **GitHub Actions**.
+2. Repo **Settings → Secrets and variables → Actions**, add:
+   - `VITE_API_BASE_URL` — the URL of your deployed backend (Pages only
+     serves static files, so FastAPI needs to run somewhere reachable,
+     e.g. Render, Railway or Fly.io).
+   - `VITE_CLERK_PUBLISHABLE_KEY` — your Clerk publishable key.
+3. Push to `main`, or run the workflow manually from the **Actions** tab.
+
+The site is served under a repo subpath
+(`https://<owner>.github.io/IndiaScored/`); the build picks that up
+automatically via `actions/configure-pages`, and client-side routes survive a
+direct refresh because the build copies `index.html` to `404.html`.
+
 ### Tests
 
 ```bash
