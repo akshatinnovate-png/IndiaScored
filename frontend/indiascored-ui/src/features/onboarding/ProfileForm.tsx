@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "@/lib/auth";
 import { useNavigate } from "react-router-dom";
 
 import { CheckCircle } from "lucide-react";

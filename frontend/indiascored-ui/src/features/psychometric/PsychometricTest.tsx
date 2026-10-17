@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { useUser } from "@/lib/auth";
 import { useNavigate } from "react-router-dom";
 import { api } from "@/lib/api";
 

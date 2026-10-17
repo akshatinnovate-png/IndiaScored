@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { useUser, UserButton } from "@clerk/clerk-react";
+import { useUser, UserButton } from "@/lib/auth";
 import { useNavigate } from "react-router-dom";
 import { Bell, CheckCircle, XCircle, AlertTriangle, Clock, RefreshCw } from "lucide-react";
 

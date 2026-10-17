@@ -28,6 +28,9 @@ class Settings:
 
     mongo_uri: str = field(default_factory=lambda: os.getenv("MONGO_URI", "mongodb://localhost:27017"))
     mongo_db: str = field(default_factory=lambda: os.getenv("MONGO_DB", "indiascored"))
+    demo_mode: bool = field(
+        default_factory=lambda: os.getenv("DEMO_MODE", "").lower() in ("1", "true", "yes")
+    )
 
     bundle_path: Path = field(
         default_factory=lambda: Path(

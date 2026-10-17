@@ -158,6 +158,11 @@ Optional, for LLM-written remarks rather than the rule-based fallback:
 ollama pull mistral
 ```
 
+**No MongoDB account?** Set `DEMO_MODE=true` (instead of `MONGO_URI`) and the
+API runs against an in-memory mock database — no Atlas signup, no
+connection string. Data resets on every restart, which is fine for a demo
+but not for anything you want to keep.
+
 ### Frontend
 
 ```bash
@@ -166,6 +171,12 @@ npm install
 cp .env.example .env          # set VITE_CLERK_PUBLISHABLE_KEY and VITE_API_BASE_URL
 npm run dev
 ```
+
+**No Clerk key?** Leave `VITE_CLERK_PUBLISHABLE_KEY` unset and the app runs
+in demo auth mode: a "Continue as Demo User" button signs you in locally
+(one fixed account per browser, no real authentication, no Clerk account
+needed). Every other feature — onboarding, scoring, the underwriting
+dashboard — works exactly the same.
 
 ### Deploying the frontend to GitHub Pages
 
@@ -177,8 +188,10 @@ setup:
 2. Repo **Settings → Secrets and variables → Actions**, add:
    - `VITE_API_BASE_URL` — the URL of your deployed backend (Pages only
      serves static files, so FastAPI needs to run somewhere reachable,
-     e.g. Render, Railway or Fly.io).
-   - `VITE_CLERK_PUBLISHABLE_KEY` — your Clerk publishable key.
+     e.g. Render, Railway or Fly.io — deploy it with `DEMO_MODE=true` if you
+     don't want to set up MongoDB).
+   - `VITE_CLERK_PUBLISHABLE_KEY` — optional. Omit it and the deployed site
+     runs in demo auth mode (see above) with no Clerk account needed.
 3. Push to `main`, or run the workflow manually from the **Actions** tab.
 
 The site is served under a repo subpath

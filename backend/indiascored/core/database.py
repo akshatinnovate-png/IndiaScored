@@ -19,6 +19,14 @@ APPLICANTS = "applicants"
 @lru_cache(maxsize=1)
 def get_client() -> MongoClient:
     settings = get_settings()
+    if settings.demo_mode:
+        import mongomock
+
+        logger.warning(
+            "DEMO_MODE is set — using an in-memory mock database. "
+            "Data will NOT persist across restarts."
+        )
+        return mongomock.MongoClient(tz_aware=False)
     return MongoClient(settings.mongo_uri, tz_aware=False)
 
 

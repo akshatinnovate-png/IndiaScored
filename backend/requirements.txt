@@ -7,6 +7,7 @@ python-multipart==0.0.20
 
 # --- Persistence -------------------------------------------------------
 pymongo==4.10.1
+mongomock==4.3.0  # DEMO_MODE=true: in-memory DB, no MongoDB account needed
 
 # --- Modelling and explainability -------------------------------------
 numpy==2.2.6

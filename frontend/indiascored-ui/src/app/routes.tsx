@@ -1,5 +1,5 @@
 import { Navigate, Route, Routes, useParams } from "react-router-dom";
-import { SignedIn, SignedOut } from "@clerk/clerk-react";
+import { SignedIn, SignedOut } from "@/lib/auth";
 import type { ReactNode } from "react";
 
 import LandingPage from "@/features/landing/LandingPage";
