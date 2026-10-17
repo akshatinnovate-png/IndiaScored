@@ -1,8 +1,10 @@
 /**
  * The single place the UI talks to the IndiaScored backend.
  *
- * Every call goes through `request`, so the base URL, JSON handling and
- * error shape are defined once rather than re-derived at twenty call sites.
+ * With VITE_API_BASE_URL set, every call goes over HTTP to the FastAPI
+ * service. Without it — the GitHub Pages build — the same calls run against
+ * the in-browser backend in `lib/local/`, which scores with the exported
+ * model and stores data in localStorage, so the app needs no server at all.
  */
 
 import type {
@@ -18,9 +20,13 @@ import type {
   UnderwritingQueue,
 } from "./types";
 
+import { LocalApiError, localApi } from "./local/backend";
+
 export const API_BASE_URL =
-  (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "") ??
-  "http://localhost:8000";
+  (import.meta.env.VITE_API_BASE_URL as string | undefined)?.replace(/\/$/, "") || null;
+
+/** True when the app runs entirely in the browser, with no backend. */
+export const IS_LOCAL_BACKEND = API_BASE_URL === null;
 
 /** An error carrying the backend's own message, so the UI can show it. */
 export class ApiError extends Error {
@@ -72,7 +78,7 @@ const json = (body: unknown): RequestInit => ({
   body: JSON.stringify(body),
 });
 
-export const api = {
+const remoteApi = {
   /** Liveness plus which components actually loaded. */
   health: () => request<HealthReport>("/health"),
 
@@ -161,3 +167,26 @@ export const api = {
       ),
   },
 };
+
+/** Re-raise the local backend's errors as the ApiError the UI already handles. */
+function withApiErrors<T extends object>(target: T): T {
+  return Object.fromEntries(
+    Object.entries(target).map(([key, value]) => [
+      key,
+      typeof value === "function"
+        ? async (...args: unknown[]) => {
+            try {
+              return await value(...args);
+            } catch (error) {
+              if (error instanceof LocalApiError) throw new ApiError(error.message, error.status);
+              throw error;
+            }
+          }
+        : withApiErrors(value as object),
+    ]),
+  ) as T;
+}
+
+export const api: typeof remoteApi = IS_LOCAL_BACKEND
+  ? withApiErrors(localApi as unknown as typeof remoteApi)
+  : remoteApi;

@@ -1,0 +1,86 @@
+{
+  "num__coop_score": {
+    "label": "Cooperative / SHG standing",
+    "meaning": "Repayment and participation record inside the applicant's self-help group or cooperative society.",
+    "high": "A strong community standing is one of the best available substitutes for a formal repayment record.",
+    "low": "Weak or absent cooperative standing leaves the file with little peer-verified repayment evidence."
+  },
+  "num__psychometric_score": {
+    "label": "Psychometric assessment",
+    "meaning": "Timed behavioural test measuring planning horizon, risk appetite and consistency of responses.",
+    "high": "Consistent, forward-planning answers correlate with disciplined repayment behaviour.",
+    "low": "Impulsive or inconsistent responses are associated with higher delinquency in thin-file cohorts."
+  },
+  "num__bill_on_time_ratio": {
+    "label": "Utility bill punctuality",
+    "meaning": "Share of electricity, water and gas bills settled on or before the due date over the last six months.",
+    "high": "Paying recurring bills on time demonstrates the same discipline an EMI schedule requires.",
+    "low": "Frequently late utility payments signal cash-flow strain before any loan is added."
+  },
+  "num__income_signal": {
+    "label": "Inferred income stability",
+    "meaning": "Composite of payment sizes and regularity used as a proxy for earnings consistency.",
+    "high": "Stable inferred earnings support a predictable repayment capacity.",
+    "low": "Volatile inferred earnings make a fixed instalment harder to service."
+  },
+  "num__sms_count": {
+    "label": "Transactional SMS activity",
+    "meaning": "Monthly volume of transactional messages, a proxy for how much formal financial activity the applicant generates.",
+    "high": "Higher transactional volume gives the model more verifiable financial footprint to work with.",
+    "low": "Sparse activity leaves a thin footprint and widens the uncertainty around the score."
+  },
+  "num__sim_tenure": {
+    "label": "SIM tenure",
+    "meaning": "Months the applicant has held the same mobile number.",
+    "high": "A long-held number is a durable identity anchor and correlates with settled circumstances.",
+    "low": "A recently activated number offers little history to verify identity or stability against."
+  },
+  "num__recharge_freq": {
+    "label": "Recharge regularity",
+    "meaning": "How reliably prepaid recharges happen before the pack lapses.",
+    "high": "Recharging before expiry, month after month, is a small but genuine repayment-like commitment.",
+    "low": "Letting packs lapse repeatedly suggests short-term liquidity gaps."
+  },
+  "num__location_stability": {
+    "label": "Location stability",
+    "meaning": "Consistency of the applicant's primary location over the past twelve months.",
+    "high": "A stable location lowers collection risk and supports field verification.",
+    "low": "Frequent relocation raises both traceability and collection risk."
+  },
+  "num__land_verified": {
+    "label": "Land record verification",
+    "meaning": "Whether an agricultural or residential land holding was matched against state land records.",
+    "high": "A verified holding provides a tangible anchor behind an otherwise unsecured file.",
+    "low": "Without a verified holding the exposure rests entirely on behavioural signals."
+  },
+  "num__loan_amount_requested": {
+    "label": "Requested principal",
+    "meaning": "The amount the applicant asked for, relative to their inferred capacity.",
+    "high": "A large ask relative to inferred capacity raises the instalment burden and therefore the risk.",
+    "low": "A modest ask is comfortably serviceable on the inferred capacity."
+  },
+  "num__loan_amount_log": {
+    "label": "Requested principal (log scale)",
+    "meaning": "Log-transformed principal, which is how the model reads loan size.",
+    "high": "A larger principal raises the instalment burden relative to inferred capacity.",
+    "low": "A smaller principal keeps the instalment well within inferred capacity."
+  },
+  "cat__region_rural": {
+    "label": "Rural region",
+    "meaning": "Applicant's primary region is rural.",
+    "high": "Rural files lean more heavily on cooperative standing and land verification than on telecom signals.",
+    "low": "Urban files carry a denser digital footprint for the model to read."
+  },
+  "cat__user_type_feature_phone": {
+    "label": "Feature-phone user",
+    "meaning": "The applicant's handset is a feature phone rather than a smartphone.",
+    "high": "A feature phone generates fewer digital signals, so the score rests on a narrower base.",
+    "low": "Smartphone usage yields a richer behavioural footprint."
+  },
+  "cat__recharge_pattern_often_late": {
+    "label": "Frequently late recharges",
+    "meaning": "Recharges routinely happen after the previous pack has expired.",
+    "high": "A persistent pattern of late recharges is among the stronger negative behavioural markers.",
+    "low": "Timely recharges indicate steady small-ticket cash availability."
+  }
+}

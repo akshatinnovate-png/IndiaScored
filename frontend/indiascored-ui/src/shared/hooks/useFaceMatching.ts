@@ -79,11 +79,8 @@ const useFaceMatching = (videoRef) => {
         // First, let's check if we can access the models
         console.log("Checking model accessibility...");
         
-        // Try to load models from a CDN instead of local files
-        // This avoids the path issues with local model files
-        const MODEL_URL = process.env.NODE_ENV === 'development' 
-          ? '/models' 
-          : 'https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights';
+        // Weights ship in public/models, so they are served from the site itself.
+        const MODEL_URL = `${import.meta.env.BASE_URL}models`;
         
         console.log("Using model URL:", MODEL_URL);
         

@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit -p tsconfig.app.json"
+    "typecheck": "tsc --noEmit -p tsconfig.app.json",
+    "test:model": "node src/lib/local/model.test.ts"
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.43.1",
@@ -37,7 +38,8 @@
     "recharts": "^3.1.2",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "tesseract.js": "^6.0.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
@@ -56,7 +58,7 @@
     "typescript-eslint": "^8.39.1",
     "vite": "^7.1.2"
   },
-  "description": "IndiaScored \u2014 alternative-data credit risk platform, applicant and underwriter interfaces.",
+  "description": "IndiaScored — alternative-data credit risk platform, applicant and underwriter interfaces.",
   "author": "Akshat Sarkar",
   "license": "MIT"
 }

@@ -26,7 +26,7 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
           cache-dependency-path: frontend/indiascored-ui/package-lock.json
 
@@ -37,11 +37,14 @@ jobs:
         id: pages
         uses: actions/configure-pages@v5
 
+      - name: Check the in-browser model against the Python pipeline
+        run: npm run test:model
+
+      # No API URL and no Clerk key: the site scores in the browser, stores
+      # data in localStorage and uses local demo sign-in. Nothing to host.
       - name: Build
         env:
           VITE_BASE_PATH: ${{ steps.pages.outputs.base_path }}/
-          VITE_API_BASE_URL: ${{ secrets.VITE_API_BASE_URL }}
-          VITE_CLERK_PUBLISHABLE_KEY: ${{ secrets.VITE_CLERK_PUBLISHABLE_KEY }}
         run: npm run build
 
       - name: Add SPA fallback for client-side routing

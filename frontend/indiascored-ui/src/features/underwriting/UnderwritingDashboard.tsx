@@ -25,7 +25,7 @@ import {
   YAxis,
 } from "recharts";
 
-import { api } from "@/lib/api";
+import { api, IS_LOCAL_BACKEND } from "@/lib/api";
 import type {
   Application,
   ApplicantDossier,
@@ -504,7 +504,9 @@ export default function UnderwritingDashboard() {
                         <p className="mt-2 text-xs text-slate-400">
                           {narration.generated_by === "mistral"
                             ? "Written by Mistral running locally"
-                            : "Ollama unavailable — rule-based summary"}
+                            : IS_LOCAL_BACKEND
+                              ? "Rule-based summary, generated in your browser"
+                              : "Ollama unavailable — rule-based summary"}
                         </p>
                       </>
                     ) : (

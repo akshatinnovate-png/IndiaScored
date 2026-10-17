@@ -76,8 +76,14 @@ IndiaScored is like giving a person with no credit history a “financial reputa
 
 ## Demo
 
-Run the backend and frontend locally (see **Running it** below), then walk
-through the full applicant-to-underwriter loop:
+**Live:** https://akshatinnovate-png.github.io/IndiaScored/ — runs entirely in
+your browser. No server, no sign-up, no API keys: the trained model is scored
+in JavaScript and your data stays in your browser's local storage. Sign in
+with **Continue as Demo User**; the underwriter desk is at
+`/underwriter-login` (`admin` / `hackathon123`) and opens with five sample
+applicants already in the queue.
+
+Walk through the full applicant-to-underwriter loop:
 
 1. **Sign up** as an applicant and complete onboarding — Aadhaar OCR, phone
    verification, a short profile, and the timed psychometric assessment.
@@ -120,6 +126,19 @@ profile lands around IndiaScore ~730 (A+) and a weak one around ~470 (D).
                     MongoDB — one `applicants` collection
 ```
 
+**Serverless mode.** When the frontend is built without `VITE_API_BASE_URL`
+(as the GitHub Pages site is), `lib/api.ts` routes every call to
+`lib/local/` instead of over HTTP: the same routes and response shapes, with
+the exported model doing the scoring and localStorage standing in for
+MongoDB. `backend/scripts/export_browser_model.py` converts the trained
+bundle — preprocessor, all five calibration folds (450 LightGBM trees each),
+their isotonic calibrators, and the raw model SHAP explains — into a 1.5 MB
+JSON file (360 KB gzipped). The browser port runs exact TreeSHAP, and
+`npm run test:model` checks it against the Python pipeline on 60 reference
+applicants: identical PDs, grades and scores, and SHAP values within 1e-10.
+Remarks use the rule-based narrator (there is no LLM in the browser), and
+Aadhaar OCR runs locally with tesseract.js.
+
 ## Repository layout
 
 ```
@@ -135,6 +154,8 @@ frontend/indiascored-ui/
   src/features/        one folder per part of the product
   src/shared/          ui primitives and hooks
   src/lib/             api client, types, formatting
+  src/lib/local/       in-browser backend: model runtime, TreeSHAP, storage
+  public/model/        the trained model exported to JSON
 ```
 
 ## Running it
@@ -168,42 +189,40 @@ but not for anything you want to keep.
 ```bash
 cd frontend/indiascored-ui
 npm install
-cp .env.example .env          # set VITE_CLERK_PUBLISHABLE_KEY and VITE_API_BASE_URL
-npm run dev
+npm run dev                   # serverless: no backend, no keys needed
 ```
 
-**No Clerk key?** Leave `VITE_CLERK_PUBLISHABLE_KEY` unset and the app runs
-in demo auth mode: a "Continue as Demo User" button signs you in locally
-(one fixed account per browser, no real authentication, no Clerk account
-needed). Every other feature — onboarding, scoring, the underwriting
-dashboard — works exactly the same.
+Both settings in `.env` are optional:
 
-### Deploying the frontend to GitHub Pages
+- `VITE_API_BASE_URL` — set it to use the FastAPI backend; leave it out to
+  score and store everything in the browser.
+- `VITE_CLERK_PUBLISHABLE_KEY` — set it for real Clerk sign-in; leave it out
+  for demo sign-in ("Continue as Demo User", one local account per browser).
 
-`.github/workflows/deploy-pages.yml` builds and deploys
-`frontend/indiascored-ui` to GitHub Pages on every push to `main`. One-time
-setup:
+### Deploying to GitHub Pages
 
-1. Repo **Settings → Pages → Source** → set to **GitHub Actions**.
-2. Repo **Settings → Secrets and variables → Actions**, add:
-   - `VITE_API_BASE_URL` — the URL of your deployed backend (Pages only
-     serves static files, so FastAPI needs to run somewhere reachable,
-     e.g. Render, Railway or Fly.io — deploy it with `DEMO_MODE=true` if you
-     don't want to set up MongoDB).
-   - `VITE_CLERK_PUBLISHABLE_KEY` — optional. Omit it and the deployed site
-     runs in demo auth mode (see above) with no Clerk account needed.
-3. Push to `main`, or run the workflow manually from the **Actions** tab.
+`.github/workflows/deploy-pages.yml` runs the model parity test, builds the
+frontend in serverless mode and deploys it on every push to `main`. The only
+setup is one switch: repo **Settings → Pages → Source → GitHub Actions**. No
+secrets are needed or read.
 
 The site is served under a repo subpath
 (`https://<owner>.github.io/IndiaScored/`); the build picks that up
 automatically via `actions/configure-pages`, and client-side routes survive a
 direct refresh because the build copies `index.html` to `404.html`.
 
+After retraining, re-export the browser model:
+
+```bash
+cd backend && python scripts/export_browser_model.py
+```
+
 ### Tests
 
 ```bash
-cd backend && pytest                       # 83 tests
-cd frontend/indiascored-ui && npm run build   # typecheck + production build
+cd backend && pytest                            # 83 tests
+cd frontend/indiascored-ui && npm run test:model   # browser model vs Python
+cd frontend/indiascored-ui && npm run build        # typecheck + production build
 ```
 
 ## API

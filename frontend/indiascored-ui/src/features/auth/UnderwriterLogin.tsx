@@ -2,12 +2,14 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/shared/ui/input";
 import { Button } from "@/shared/PrimaryButton";
+import { IS_DEMO_AUTH, useDemoSignIn } from "@/lib/auth";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const signInDemo = useDemoSignIn();
 
   const handleLogin = () => {
     // Hardcoded credentials
@@ -15,6 +17,7 @@ const AdminLogin = () => {
     const ADMIN_PASSWORD = "hackathon123";
 
     if (username === ADMIN_USERNAME && password === ADMIN_PASSWORD) {
+      signInDemo();
       navigate("/admin"); // Redirect to Admin Dashboard
     } else {
       setError("Wrong username or password");
@@ -47,6 +50,12 @@ const AdminLogin = () => {
           </div>
 
           {error && <p className="text-red-500 text-sm">{error}</p>}
+
+          {IS_DEMO_AUTH && (
+            <p className="rounded bg-orange-50 px-3 py-2 text-xs text-gray-600">
+              Demo credentials: <code>admin</code> / <code>hackathon123</code>
+            </p>
+          )}
 
           <Button label="Login" onClick={handleLogin} className="w-full mt-2" />
         </div>

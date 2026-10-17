@@ -89,26 +89,11 @@ const AadhaarVerification: React.FC<AadhaarVerificationProps> = ({
     setResult({ message: `Processing ${side} side...`, type: "info" });
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("language", "eng");
-      formData.append("apikey", "K82469512788957");
-      formData.append("isOverlayRequired", "false");
-      formData.append("detectOrientation", "true");
-      formData.append("scale", "true");
-      formData.append("isTable", "false");
-
-      const res = await fetch("https://api.ocr.space/parse/image", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) throw new Error("OCR service unavailable");
-
-      const data = await res.json();
-      if (data.IsErroredOnProcessing) throw new Error(data.ErrorMessage || "OCR processing failed");
-
-      const parsedText = data?.ParsedResults?.[0]?.ParsedText || "";
+      // OCR runs in the browser (tesseract.js), so the card never leaves the
+      // device and no OCR service or API key is involved.
+      const { recognize } = await import("tesseract.js");
+      const { data } = await recognize(file, "eng");
+      const parsedText = data?.text || "";
       if (!parsedText || parsedText.trim().length < 50) {
         setResult({
           message: `Unable to extract text from ${side} side. Please ensure the card is clear.`,
